@@ -19,5 +19,5 @@ def generate_launch_description():
             name='sub',
             output='screen',
             parameters=[],
-        )s
+        )
     ])
