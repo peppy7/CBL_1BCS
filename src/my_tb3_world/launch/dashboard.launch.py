@@ -12,12 +12,5 @@ def generate_launch_description():
             name='db',
             output='screen',
             parameters=[],
-        ),
-        Node(
-            package='my_tb3_world',
-            executable='subscriber',
-            name='sub',
-            output='screen',
-            parameters=[],
         )
     ])

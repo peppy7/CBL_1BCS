@@ -24,4 +24,5 @@ export TURTLEBOT3_MODEL=burger
 **list of important run/launch commands**
 ros2 run rqt_graph rqt_graph
 ros2 run turtlebot3_teleop teleop_keyboard
+ros2 launch nav2_bringup bringup_launch.py map:=/path/to/map.yaml use_sim_time:=True
 ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=True
