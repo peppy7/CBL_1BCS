@@ -30,8 +30,22 @@ export TURTLEBOT3_MODEL=burger
 Now we are in the ros2 enviroment
 
 **list of important run/launch commands**
+runs rqt_graph, visualizes nodes and topics.
 ```
 ros2 run rqt_graph rqt_graph
+```
+
+runs teleop for keyboard control of the robot
+```
 ros2 run turtlebot3_teleop teleop_keyboard
+```
+
+launches nav2, required for navigation
+```
+ros2 launch nav2_bringup bringup_launch.py map:=map.yaml use_sim_time:=True
+```
+
+launches rviz
+```
 ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=True
 ```
