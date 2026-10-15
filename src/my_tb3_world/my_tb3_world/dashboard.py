@@ -5,21 +5,59 @@ from std_msgs.msg import String
 from rclpy.action import ActionClient
 from nav2_msgs.action import NavigateToPose
 
+from geometry_msgs.msg import PoseWithCovarianceStamped
+from nav2_msgs.srv import SetInitialPose
+
+from my_tb3_world import Pressure_prediction_model
+
 # has the following tasks:
-# receive pressure data
-# synchronize & adjust sprayer pressure
-# tell physical twin where to go using /navigate_to_pose action from nav2
+# TODO: receive pressure data
+# TODO: synchronize & adjust sprayer pressure
+# TODO: tell physical twin where to go using /navigate_to_pose action from nav2
 class Dashboard(Node):
 
     def __init__(self):
         super().__init__('dashboard')
 
+        # define prediction map
+        self.declare_parameter('prediction_map_sizex', 4)
+        self.declare_parameter('prediction_map_sizey', 3)
+        self.prediction_map = Pressure_prediction_model(prediction_map_sizex, prediction_map_sizey)
+
+        #setup service client to send initial pose
+        self.client = self.create_client(SetInitialPose, 'set_initial_pose')
+
         # setup action client for navigate_to_pose
         self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
-        # TODO: remove test
-        # tell robot to go to (x,y,w) = (4, 4, 1)
-        self.send_navigation_goal(4, 4, 1)
+        # TODO: remove tests
+        self.send_initial_pose(0.0, 0.0, 0.0)
+        
+        self.i = 1
+        # self.timer = self.create_timer(1, self.navigation_timer_callback)
+        self.send_navigation_goal(1.0, 0.0, 0.0)
+
+    def navigation_timer_callback(self):
+        self.send_navigation_goal(1.0, 0.0, 0.0)
+
+    def send_initial_pose(self, x, y, z):
+        request = SetInitialPose.Request()
+
+        # Set request header
+        request.pose.header.frame_id = "map"
+        request.pose.header.stamp = self.get_clock().now().to_msg()
+
+        #set request pose
+        request.pose.pose.pose.position.x = x
+        request.pose.pose.pose.position.y = y
+        request.pose.pose.pose.position.z = z
+        request.pose.pose.pose.orientation.w = 1.0
+
+        self.get_logger().info(f'sending initial pose x:{x}, y:{y}, z:{z}')
+        
+        self.client.wait_for_service()
+        future = self.client.call_async(request)
+        return future
     
     # navigate_to_pose goal sender
     def send_navigation_goal(self, x, y, w):
@@ -30,16 +68,25 @@ class Dashboard(Node):
         goal_msg.pose.pose.position.y = y
         goal_msg.pose.pose.orientation.w = w
 
-        self.get_logger().info(f'Sending navigation goal: x:{x}, y:{y}, w:{w}')
+        self.get_logger().info(f'Sending {self.i}th navigation goal: x:{x}, y:{y}, w:{w}')
+        self.i += 1
 
         self.action_client.wait_for_server()
         future = self.action_client.send_goal_async(
             goal_msg, feedback_callback=self.feedback_callback)
+        
+        self.get_logger().info('Waiting on feedback')
         return future
 
     # print out all feedback
     def feedback_callback(self, feedback_msg):
         self.get_logger().info(f'Received feedback: {feedback_msg.feedback}')
+
+    # TODO: implement
+    def process_local_measurement(x_cell, y_cell, time, pressure):
+
+    # TODO: implement
+    def process_global_measurement(time, pressure):
 
 def main(args=None):
     rclpy.init(args=args)
