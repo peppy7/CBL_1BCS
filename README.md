@@ -52,7 +52,7 @@ ros2 run turtlebot3_teleop teleop_keyboard
 launches nav2, required for navigation
 
 ```
-ros2 launch nav2_bringup bringup_launch.py map:=map.yaml use_sim_time:=True
+ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=map.yaml use_sim_time:=True
 ```
 
 
