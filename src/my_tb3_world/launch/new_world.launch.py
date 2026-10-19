@@ -58,6 +58,18 @@ def generate_launch_description():
 
     ld = LaunchDescription()
 
+    ld.add_action(
+        AppendEnvironmentVariable(
+            'GZ_SIM_SYSTEM_PLUGIN_PATH',
+            os.path.join(
+                get_package_share_directory('sprayer_gazebo'),
+                '..',
+                '..',
+                'lib'
+            )
+        )
+    )
+
     # Add the commands to the launch description
     ld.add_action(gzserver_cmd)
     ld.add_action(gzclient_cmd)

@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sprayer_interfaces.msg import SprayerPressure
-from my_tb3_world.msg import Measurement 
+from measurement_interfaces.msg import Measurement
 
 class SprayerPressureController(Node):
     def __init__(self):
@@ -34,11 +34,24 @@ class SprayerPressureController(Node):
         )
 
     def measurement_callback(self, msg):
+        if not 0.0 <= msg.pressure <= 1.0:
+            self.get_logger().warning(
+                'Ignoring cell pressure outside [0, 1]'
+            )
+            return
+
         self.latest_measurement = msg
+
+        target = SprayerPressure()
+        target.time = msg.time
+        target.pressure = 2.0 * (1.0 - msg.pressure)
+
+        self.target_publisher.publish(target)
 
         self.get_logger().info(
             f'Cell ({msg.cell_x}, {msg.cell_y}), '
-            f'pressure: {msg.pressure}, time: {msg.time}'
+            f'cell pressure: {msg.pressure:.2f}, '
+            f'target sprayer pressure: {target.pressure:.2f}'
         )
 
 def main(args=None):
