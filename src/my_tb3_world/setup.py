@@ -24,8 +24,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-                'dashboard = my_tb3_world.dashboard:main',
-                'subscriber = my_tb3_world.subscriber:main',
+            'dashboard = my_tb3_world.dashboard:main',
+            'subscriber = my_tb3_world.subscriber:main',
+            'sprayer_pressure_publisher = my_tb3_world.sprayer_pressure_publisher:main',
+            'sprayer_pressure_controller = my_tb3_world.sprayer_pressure_controller:main',
         ],
 },
 )
