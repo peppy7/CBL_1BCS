@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from sprayer_interfaces.msg import SprayerPressure
+from msg import SprayerPressure
 
 
 class SprayerPressurePublisher(Node):

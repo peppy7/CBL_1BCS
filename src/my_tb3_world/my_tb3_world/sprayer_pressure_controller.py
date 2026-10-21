@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from sprayer_interfaces.msg import SprayerPressure
-from measurement_interfaces.msg import Measurement
+from msg import SprayerPressure
+from msg import Measurement
 
 class SprayerPressureController(Node):
     def __init__(self):
