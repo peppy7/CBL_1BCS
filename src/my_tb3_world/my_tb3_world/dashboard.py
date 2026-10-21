@@ -22,13 +22,21 @@ class Dashboard(Node):
         # define prediction map
         self.declare_parameter('prediction_map_sizex', 4)
         self.declare_parameter('prediction_map_sizey', 3)
-        self.prediction_map = Pressure_prediction_model(prediction_map_sizex, prediction_map_sizey)
+        self.prediction_map = Pressure_prediction_model(
+            prediction_map_sizex,
+            prediction_map_sizey,
+            self
+        )
+        self.cleanQueue = []
 
         #setup service client to send initial pose
         self.client = self.create_client(SetInitialPose, 'set_initial_pose')
 
         # setup action client for navigate_to_pose
         self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+
+        # setup topic subscriber for measurement
+        self.subscriber = self.create_subscription(Measurement, 'measurement', self.measurement_callback, 10)
 
         # TODO: remove tests
         self.send_initial_pose(0.0, 0.0, 0.0)
@@ -37,8 +45,25 @@ class Dashboard(Node):
         # self.timer = self.create_timer(1, self.navigation_timer_callback)
         self.send_navigation_goal(1.0, 0.0, 0.0)
 
+    def measurement_callback(self, msg):
+        self.get_logger().info(f'measurement: {msg}')
+        if msg.cell_x == -1 && msg.cell_y == -1:
+            self.prediction_map.handle_global_measurement(
+                Global_measurement(msg.pressure, msg.time)
+            )
+        else
+            self.prediction_map.handle_local_measurement(
+                Local_measurement(msg.pressure, msg.time, msg.cell_x, msg.cell_y)
+            )
+        
+        for i in self.prediction_map.
+
     def navigation_timer_callback(self):
         self.send_navigation_goal(1.0, 0.0, 0.0)
+
+    def get_result_callback(self, future):
+        result = future.result().result
+        self.get_logger().info(f'Result: {result}')
 
     def send_initial_pose(self, x, y, z):
         request = SetInitialPose.Request()
@@ -82,11 +107,7 @@ class Dashboard(Node):
     def feedback_callback(self, feedback_msg):
         self.get_logger().info(f'Received feedback: {feedback_msg.feedback}')
 
-    # TODO: implement
-    def process_local_measurement(x_cell, y_cell, time, pressure):
 
-    # TODO: implement
-    def process_global_measurement(time, pressure):
 
 def main(args=None):
     rclpy.init(args=args)
