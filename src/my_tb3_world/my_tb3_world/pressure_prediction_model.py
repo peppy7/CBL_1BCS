@@ -4,23 +4,46 @@ from global_measurement import Global_measurement
 # describes the entire prediction model, with all cells and taking in all input
 class Pressure_prediction_model():
 
-    def __init__(self, x: int, y: int, initial_measurement: Global_measurement):
+    def __init__(self, x: int, y: int, initial_measurement: Global_measurement, dashboard: Dashboard):
         self.pressure_matrix = cell_matrix(x, y)
         self.fouling_rate = 0.05 # initial fouling rate, will be changed slowly
         self.global_sensor_trust = 0.5 # how much to use new measurement compared to old, in [0,1]
         self.delta = 1.0 # timestep for updating
         self.time_last_global_measurement = self.get_clock().now().nanoseconds
         self.last_global_measurement = initial_measurement
+        self.cleanThreshhold = 0.3 # below what level is a cell considered dirty
+        self.dashboard = dashboard
 
         self.timer = self.create_timer(delta, self.update)
 
     # lowers the pressure of every cell by a bit to mimic fouling
     def update(self):
+
+        # update cells
         for collumn in pressure_matrix:
             for cell in collumn:
                 cell.pressure = cell.pressure - fouling_rate * delta
                 if cell.pressure < 0.0:
                     cell.pressure = 0.0
+
+        # check if cells need to be cleaned
+        for collumn in pressure_matrix:
+            for cell in collumn:
+                cell.pressure = cell.pressure - fouling_rate * delta
+                if cell.pressure < self.cleanThreshhold and not (cell in dashboard.cleanQueue):
+                    dashboard.cleanQueue.append(cell)
+
+        # log all pressures
+        logMatrix = []
+        for collumn in pressure_matrix:
+            for cell in collumn:
+                logMatrix[cell_x][cell_y] = pressure_matrix[cell_x][cell_y].pressure
+
+        for i in range(len(pressure_matrix[0])):
+            printStr = ""
+            for j in range(len(pressure_matrix)):
+                printStr = printStr + " " + str(pressure_matrix[j][i].pressure)
+            self.get_logger().info(f'{printStr}')
 
     # takes a local measurement and sets the cell accordingly
     def handle_local_measurement(self, local_measurement: Local_measurement):
@@ -49,7 +72,7 @@ class Pressure_prediction_model():
 
     # returns a matrix filled with cells at a certain pressure
     def cell_matrix(x: int, y: int, pressure: float):
-        matrix = [[]]
+        matrix = []
 
         for i in range(x):
             matrix[i] = []
