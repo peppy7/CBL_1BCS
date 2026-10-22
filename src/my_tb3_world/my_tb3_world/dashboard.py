@@ -47,11 +47,11 @@ class Dashboard(Node):
 
     def measurement_callback(self, msg):
         self.get_logger().info(f'measurement: {msg}')
-        if msg.cell_x == -1 && msg.cell_y == -1:
+        if msg.cell_x == -1 and msg.cell_y == -1:
             self.prediction_map.handle_global_measurement(
                 Global_measurement(msg.pressure, msg.time)
             )
-        else
+        else:
             self.prediction_map.handle_local_measurement(
                 Local_measurement(msg.pressure, msg.time, msg.cell_x, msg.cell_y)
             )
