@@ -8,7 +8,10 @@ from nav2_msgs.action import NavigateToPose
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav2_msgs.srv import SetInitialPose
 
-from my_tb3_world import Pressure_prediction_model
+from my_tb3_world.pressure_prediction_model import Pressure_prediction_model
+from my_tb3_world.global_measurement import Global_measurement
+from my_tb3_world.local_measurement import Local_measurement
+from measurement_interfaces.msg import Measurement
 
 # has the following tasks:
 # TODO: receive pressure data
@@ -23,11 +26,13 @@ class Dashboard(Node):
         self.declare_parameter('prediction_map_sizex', 4)
         self.declare_parameter('prediction_map_sizey', 3)
         self.prediction_map = Pressure_prediction_model(
-            prediction_map_sizex,
-            prediction_map_sizey,
-            self
+            self.get_parameter('prediction_map_sizex').value,
+            self.get_parameter('prediction_map_sizey').value,
+            Global_measurement(1.0, 0.0),
+            self.get_logger()
         )
-        self.cleanQueue = []
+
+        self.timer = self.create_timer(self.prediction_map.delta, self.prediction_map.update)
 
         #setup service client to send initial pose
         self.client = self.create_client(SetInitialPose, 'set_initial_pose')
@@ -55,8 +60,6 @@ class Dashboard(Node):
             self.prediction_map.handle_local_measurement(
                 Local_measurement(msg.pressure, msg.time, msg.cell_x, msg.cell_y)
             )
-        
-        for i in self.prediction_map.
 
     def navigation_timer_callback(self):
         self.send_navigation_goal(1.0, 0.0, 0.0)
@@ -64,6 +67,12 @@ class Dashboard(Node):
     def get_result_callback(self, future):
         result = future.result().result
         self.get_logger().info(f'Result: {result}')
+        newGoal = self.prediction_map.get_cleaning_goal()
+        self.send_navigation_goal(
+            float(newGoal.x),
+            float(newGoal.y),
+            0.0
+            )
 
     def send_initial_pose(self, x, y, z):
         request = SetInitialPose.Request()
@@ -80,12 +89,11 @@ class Dashboard(Node):
 
         self.get_logger().info(f'sending initial pose x:{x}, y:{y}, z:{z}')
         
-        self.client.wait_for_service()
-        future = self.client.call_async(request)
-        return future
+        self.client.call_async(request)
     
     # navigate_to_pose goal sender
     def send_navigation_goal(self, x, y, w):
+        self.get_logger().info(f'Sending {self.i}th navigation goal: x:{x}, y:{y}, w:{w}')
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose.header.frame_id = 'map'
         goal_msg.pose.header.stamp = self.get_clock().now().to_msg()
@@ -93,7 +101,6 @@ class Dashboard(Node):
         goal_msg.pose.pose.position.y = y
         goal_msg.pose.pose.orientation.w = w
 
-        self.get_logger().info(f'Sending {self.i}th navigation goal: x:{x}, y:{y}, w:{w}')
         self.i += 1
 
         self.action_client.wait_for_server()

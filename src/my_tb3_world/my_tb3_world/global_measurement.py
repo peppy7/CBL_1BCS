@@ -3,5 +3,5 @@
 class Global_measurement():
 
         def __init__(self, pressure: float, time: float):
-        self.pressure = pressure
-        self.time = time
+                self.pressure = pressure
+                self.time = time
